@@ -62,15 +62,34 @@ def get_video_infos(videopath):
     out_string = run(args,mode=1)
     infos = json.loads(out_string)
     try:
-        fps = eval(infos['streams'][0]['avg_frame_rate'])
+        # 更安全的幀率計算
+        fps_str = infos['streams'][0]['avg_frame_rate']
+        if '/' in fps_str:
+            num, den = map(int, fps_str.split('/'))
+            fps = num/den if den != 0 else 30  # 使用預設值如果分母為0
+        else:
+            fps = float(fps_str)
         endtime = float(infos['format']['duration'])
         width = int(infos['streams'][0]['width'])
         height = int(infos['streams'][0]['height'])
     except Exception as e:
-        fps = eval(infos['streams'][1]['r_frame_rate'])
-        endtime = float(infos['format']['duration'])
-        width = int(infos['streams'][1]['width'])
-        height = int(infos['streams'][1]['height'])
+        try:
+            # 嘗試使用備用幀率
+            fps_str = infos['streams'][1]['r_frame_rate']
+            if '/' in fps_str:
+                num, den = map(int, fps_str.split('/'))
+                fps = num/den if den != 0 else 30  # 使用預設值如果分母為0
+            else:
+                fps = float(fps_str)
+            endtime = float(infos['format']['duration'])
+            width = int(infos['streams'][1]['width'])
+            height = int(infos['streams'][1]['height'])
+        except:
+            # 如果所有嘗試都失敗，使用預設值
+            fps = 30
+            endtime = 0
+            width = 1920
+            height = 1080
 
     return fps,endtime,height,width
 
